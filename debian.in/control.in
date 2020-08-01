@@ -1,0 +1,13 @@
+Package: zulu@JDK_MAJOR_VERSION@-@JDK_BUILD@
+Maintainer: Brian Tarricone <brian@tarricone.org>
+Version: @JDK_VERSION@-@REVISION@
+Section: java
+Priority: optional
+Architecture: @ARCH@
+Depends: ca-certificates
+Provides: java-runtime-headless, java-runtime, java-sdk-headless, java-sdk, java2-runtime-headless, java2-runtime, java2-sdk-headless, java2-sdk, java5-runtime-headless, java5-runtime, java5-sdk-headless, java5-sdk, java5-runtime-headless, java5-runtime, java5-sdk-headless, java5-sdk, java6-runtime-headless, java6-runtime, java6-sdk-headless, java6-sdk, java7-runtime-headless, java7-runtime, java7-sdk-headless, java7-sdk, @EXTRA_PROVIDES@
+Description: Azul Zulu OpenJDK @JDK_MAJOR_VERSION@
+  .
+  Azul Zulu OpenJDK is a development environment for building
+  applications, applets, and components using the Java programming
+  language.

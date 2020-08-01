@@ -1,0 +1,17 @@
+#!/bin/bash
+
+case "$1" in
+    remove|deconfigure)
+        java_home=/usr/lib/jvm/zulu@JDK_MAJOR_VERSION@
+        if [ "$(readlink $java_home)" != "/usr/lib/jvm/@ARCHIVE_DIR@" ]; then
+            pushd $java_home/bin >/dev/null
+            for program in *; do
+                update-alternatives --remove "$program" "$java_home/bin/$program" || true
+            done
+            popd >/dev/null
+            rm -f $java_home
+        fi
+        ;;
+    *)
+        ;;
+esac

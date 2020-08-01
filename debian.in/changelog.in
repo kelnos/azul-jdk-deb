@@ -1,0 +1,5 @@
+zulu@JDK_MAJOR_VERSION@-@JDK_BUILD@ (@JDK_VERSION@-@REVISION@) stable; urgency=medium
+
+  * Upstream release
+
+ -- Brian Tarricone <brian@tarricone.org>  Sat, 01 Aug 2020 01:31:42 -0700

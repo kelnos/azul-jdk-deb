@@ -1,0 +1,19 @@
+#!/bin/bash
+
+case "$1" in
+    configure)
+        java_home=/usr/lib/jvm/zulu@JDK_MAJOR_VERSION@
+        java_bindir=$java_home/bin
+        ln -sfn @ARCHIVE_DIR@ $java_home
+
+        pushd $java_bindir >/dev/null
+        for program in *; do
+            update-alternatives \
+                --install "/usr/bin/$program" "$program" "$java_bindir/$program" $((310+@JDK_MAJOR_VERSION@)) \
+                --slave "/usr/share/man/man1/$program.1" "$program.1" "$java_home/man/man1/$program.1"
+        done
+        popd >/dev/null
+        ;;
+    *)
+        ;;
+esac

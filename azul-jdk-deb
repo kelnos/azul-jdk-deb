@@ -1,0 +1,89 @@
+#!/bin/bash
+
+set -e
+
+mydir=$(dirname $0)
+tmpdir="${TMPDIR:-/tmp}"
+
+archive="$1"
+archive_name=$(basename "$1")
+archive_dir="${archive_name%.tar.gz}"
+revision="${2:-1}"
+
+if [[ $archive_name =~ zulu[0-9]+(\.[0-9]+)+-(ca)-jdk([0-9]+)((\.[0-9]+)+)-linux_(i686|x64|aarch32sf|aarch32hf|aarch64|ppc64)\.tar\.gz ]]; then
+    j2se_release=${BASH_REMATCH[3]}
+    j2se_update=${BASH_REMATCH[4]#.}
+    j2se_build=${BASH_REMATCH[2]}
+    j2se_arch=${BASH_REMATCH[6]}
+    j2se_version_name="$j2se_release.$j2se_update $j2se_build"
+    j2se_version=${j2se_release}.${j2se_update}${revision}
+else
+    echo "Unable to parse archive filename" >&2
+    exit 1
+fi
+
+case "$j2se_arch" in
+    i686)
+        deb_arch=i386
+        ;;
+    x64)
+        deb_arch=amd64
+        ;;
+    aarch32sf)
+        deb_arch=armel
+        ;;
+    aarch32hf)
+        deb_arch=armhf
+        ;;
+    aarch64)
+        deb_arch=arm64
+        ;;
+    ppc64)
+        deb_arch=ppc64el
+        ;;
+    *)
+        echo "Unsupported arch $j2se_arch" >&2
+        exit 1
+        ;;
+esac
+
+j2se_fullversion="${j2se_release}.${j2se_update}"
+pkg_namever="zulu${j2se_release}-${j2se_build}_${j2se_fullversion}-${revision}_${deb_arch}"
+
+extra_provides=
+for maj in $(seq 8 $j2se_release); do
+    [ -z "$extra_provides" ] || extra_provides+=", "
+    extra_provides+="java$maj-runtime-headless, java$maj-runtime, java$maj-sdk-headless, java$maj-sdk"
+done
+
+outroot=$(mktemp -d $tmpdir/pkgroot.XXXXXXXX)
+trap "rm -rf $outroot" EXIT
+
+outdir=$outroot/$pkg_namever
+mkdir -p $outdir/DEBIAN
+mkdir -p $outdir/usr/lib/jvm
+
+tar xaf $archive -C $outdir/usr/lib/jvm
+
+for controlfile in $mydir/debian.in/*; do
+    dstname=$(basename $controlfile .in)
+    if [ "$(basename $controlfile)" = "$dstname" ]; then
+        cp $controlfile $outdir/DEBIAN/$dstname
+    else
+        sed \
+            -e "s/@JDK_MAJOR_VERSION@/$j2se_release/g" \
+            -e "s/@JDK_VERSION@/$j2se_fullversion/g" \
+            -e "s/@REVISION@/$revision/g" \
+            -e "s/@JDK_BUILD@/$j2se_build/g" \
+            -e "s/@ARCH@/$deb_arch/g" \
+            -e "s/@ARCHIVE_DIR@/$archive_dir/g" \
+            -e "s/@EXTRA_PROVIDES@/$extra_provides/g" \
+            $controlfile >$outdir/DEBIAN/$dstname
+        if [ -x $controlfile ]; then
+            chmod +x $outdir/DEBIAN/$dstname
+        fi
+    fi
+done
+
+dpkg-deb --build --root-owner-group $outdir
+mv $outroot/*.deb .
